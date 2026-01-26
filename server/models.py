@@ -20,14 +20,6 @@ class Task(BaseModel):
     blocks: List[str] = Field(
         default_factory=list, description="List of task IDs this task blocks"
     )
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="Task creation timestamp",
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="Last update timestamp",
-    )
 
 
 class TaskListResult(BaseModel):

@@ -1,7 +1,6 @@
 """Task management logic."""
 
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
 from pathlib import Path
 
 from models import (
@@ -261,8 +260,6 @@ class TaskManager:
             task.blocked_by = [
                 bid for bid in task.blocked_by if bid not in remove_blocked_by
             ]
-
-        task.updated_at = datetime.now(timezone.utc)
 
         # Update blocks references
         self._update_blocks_references(tasks, task_id)

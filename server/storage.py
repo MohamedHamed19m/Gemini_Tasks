@@ -4,7 +4,6 @@ import json
 import os
 from pathlib import Path
 from typing import List, Dict, Any, Optional
-from datetime import datetime
 
 
 class TaskStorage:
@@ -42,18 +41,7 @@ class TaskStorage:
 
         try:
             with open(self.tasks_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Convert ISO strings back to datetime objects
-                for task in data:
-                    if "created_at" in task:
-                        # replace Z with +00:00 for fromisoformat compatibility in some python versions
-                        # though 3.11+ handles Z
-                        val = task["created_at"].replace("Z", "+00:00")
-                        task["created_at"] = datetime.fromisoformat(val)
-                    if "updated_at" in task:
-                        val = task["updated_at"].replace("Z", "+00:00")
-                        task["updated_at"] = datetime.fromisoformat(val)
-                return data
+                return json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             print(f"Error loading tasks: {e}")
             return []
@@ -66,25 +54,8 @@ class TaskStorage:
 
         """
         try:
-            # Convert datetime objects to ISO strings
-            tasks_copy = []
-            for task in tasks:
-                task_dict = task.copy()
-                if "created_at" in task_dict and isinstance(
-                    task_dict["created_at"], datetime
-                ):
-                    # Use Z for UTC to be safe with all RFC 3339 validators
-                    iso = task_dict["created_at"].isoformat()
-                    task_dict["created_at"] = iso.replace("+00:00", "Z")
-                if "updated_at" in task_dict and isinstance(
-                    task_dict["updated_at"], datetime
-                ):
-                    iso = task_dict["updated_at"].isoformat()
-                    task_dict["updated_at"] = iso.replace("+00:00", "Z")
-                tasks_copy.append(task_dict)
-
             with open(self.tasks_file, "w", encoding="utf-8") as f:
-                json.dump(tasks_copy, f, indent=2, ensure_ascii=False)
+                json.dump(tasks, f, indent=2, ensure_ascii=False)
         except OSError as e:
             print(f"Error saving tasks: {e}")
 
