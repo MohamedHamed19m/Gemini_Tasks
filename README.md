@@ -18,34 +18,21 @@ Task management extension for Gemini CLI with autonomous coding loops, inspired 
 - Persistent storage across sessions
 - Status lifecycle: `pending → in_progress → completed`
 
-### 🪟 **Windows 11 Native Support**
-- PowerShell hooks and scripts
-- Native Windows path handling
-- PowerShell helper functions
-- One-command setup script
-
 ## 🚀 Quick Start
 
 ### Installation
 
-**Windows (PowerShell):**
-```powershell
-# Install extension
+```bash
 gemini extensions install https://github.com/MohamedHamed19m/Gemini_Tasks
-
-# Run automated setup
-cd C:\Users\user\.gemini\extensions\gemini-tasks
-.\scripts\setup-windows.ps1
 ```
 
 ### Enable Ralph Mode
 
-**PowerShell:**
-```powershell
+```bash
 # Enable Ralph Wiggum autonomous loops
-$env:GEMINI_RALPH_MODE = "true"
-$env:GEMINI_MAX_ITERATIONS = "25"
-$env:GEMINI_TASK_LIST_ID = "my-project"
+export GEMINI_RALPH_MODE="true"
+export GEMINI_MAX_ITERATIONS="25"
+export GEMINI_TASK_LIST_ID="my-project"
 
 # Start Gemini
 gemini
@@ -131,19 +118,6 @@ Both sessions share the same task list and coordinate automatically.
 | `GEMINI_MAX_ITERATIONS` | Max loop iterations (safety brake) | `25` |
 | `GEMINI_TASK_LIST_ID` | Task list identifier for multi-session | `default` |
 | `GEMINI_COMPLETION_PROMISE` | Keyword AI must output to signal done | `complete` |
-
-### PowerShell Profile Setup
-
-Add to your PowerShell profile for permanent configuration:
-
-```powershell
-# Edit profile
-notepad $PROFILE
-
-# Add these lines:
-$env:GEMINI_RALPH_MODE = "true"
-$env:GEMINI_MAX_ITERATIONS = "25"
-```
 
 ### Project Verification Scripts
 
@@ -366,29 +340,15 @@ Final: 4 tasks completed
 
 ## 📂 Storage Locations
 
-**Windows:**
 - Tasks: `%USERPROFILE%\.gemini\tasks\<task-list-id>.json`
 - Ralph state: `%USERPROFILE%\.gemini\ralph-state\<task-list-id>.json`
 
-**Linux/Mac:**
 - Tasks: `~/.gemini/tasks/<task-list-id>.json`
 - Ralph state: `~/.gemini/ralph-state/<task-list-id>.json`
 
 ## 🔧 Troubleshooting
 
 ### Ralph Loop Not Working
-
-**Check environment variables:**
-```powershell
-Write-Host "RALPH_MODE: $env:GEMINI_RALPH_MODE"
-Write-Host "MAX_ITERATIONS: $env:GEMINI_MAX_ITERATIONS"
-```
-
-Should show:
-```
-RALPH_MODE: true
-MAX_ITERATIONS: 25
-```
 
 **Verify hooks enabled:**
 ```
@@ -425,12 +385,6 @@ Should show:
 ✓ gemini-tasks v1.0.0
 ```
 
-**Reinstall if needed:**
-```powershell
-gemini extensions uninstall gemini-tasks
-gemini extensions install C:\path\to\gemini-tasks
-```
-
 ## 📊 Performance Tips
 
 **For overnight work:**
@@ -455,11 +409,5 @@ Inspired by:
 - Claude Code's native task management
 - Ralph Wiggum autonomous loop technique
 - The agentic coding community
-
-
-## 🚀 What's Next?
-
-- [ ] Task priorities (high/medium/low)
-- [ ] Add UI to show Tasks using Gemini Cli Hooks
 
 ---
