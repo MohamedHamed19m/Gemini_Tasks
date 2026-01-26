@@ -84,6 +84,13 @@ Hook checks:
   ✅ All verified → Allow stop
 ```
 
+### The Validation
+
+The hook script strictly enforces completion by checking three critical conditions:
+*   **Completion Promise**: Did the agent explicitly output the "completion promise" (the word `complete`)?
+*   **Task Integrity**: Are all tasks in the database marked with the `completed` status?
+*   **Project Verification**: Does the project's verification script (`verify.ps1`, `verify.py`, etc.) exit with code 0?
+
 ### Task Dependencies
 
 ```
@@ -143,13 +150,23 @@ $env:GEMINI_MAX_ITERATIONS = "25"
 Create custom verification in your project:
 it can contains tests or other scripts, its important that it return (exit 0) if success if not then it would enter the loop.
 
-**Windows (`.gemini/verify.ps1`):**
+.gemini/verify.ps1
+.gemini/verify.py
+
 ```powershell
 #!/usr/bin/env pwsh
 # Run tests
 npm test
 
 exit 0
+```
+
+```py
+if __name__ == "__main__":
+    if run_tests():
+        sys.exit(0)
+    else:
+        sys.exit(1)
 ```
 
 ## 📖 MCP Tools
