@@ -68,6 +68,48 @@ class TaskManager:
             if blocker and task_id not in blocker.blocks:
                 blocker.blocks.append(task_id)
 
+    def _detect_circular_dependency(self, tasks: List[Task], task_id: str, blocked_by: List[str]) -> bool:
+        """Prevent circular dependencies.
+        
+        Args:
+            tasks: Current list of tasks
+            task_id: ID of the task to check
+            blocked_by: List of task IDs this task will be blocked by
+            
+        Returns:
+            True if adding these blockers would create a cycle
+        """
+        def has_path(from_id: str, to_id: str, visited: set) -> bool:
+            if from_id == to_id:
+                return True
+            if from_id in visited:
+                return False
+            visited.add(from_id)
+            
+            from_task = next((t for t in tasks if t.id == from_id), None)
+            if not from_task:
+                return False
+            
+            return any(has_path(bid, to_id, visited.copy()) for bid in from_task.blocked_by)
+        
+        # Check if adding any of these blockers creates a cycle back to task_id
+        return any(has_path(bid, task_id, set()) for bid in blocked_by)
+
+    def _validate_blockers(self, tasks: List[Task], blocked_by: List[str]) -> None:
+        """Ensure blocker tasks exist.
+        
+        Args:
+            tasks: Current list of tasks
+            blocked_by: List of task IDs to validate
+            
+        Raises:
+            ValueError: If any blocker task ID is not found
+        """
+        task_ids = {t.id for t in tasks}
+        invalid = [bid for bid in blocked_by if bid not in task_ids]
+        if invalid:
+            raise ValueError(f"Invalid blocker tasks: {', '.join(invalid)}")
+
     def list_tasks(self, filter: str = "all") -> TaskListResult:
         """List tasks with optional filter.
 
@@ -108,6 +150,22 @@ class TaskManager:
 
         task_id = self._generate_task_id(tasks)
         blocked_by = blocked_by or []
+
+        # Validate blockers exist
+        try:
+            self._validate_blockers(tasks, blocked_by)
+        except ValueError as e:
+            return TaskCreateResult(
+                task=Task(id="error", subject="Validation Error"),
+                message=f"❌ {str(e)}"
+            )
+
+        # Detect circular dependencies
+        if self._detect_circular_dependency(tasks, task_id, blocked_by):
+            return TaskCreateResult(
+                task=Task(id="error", subject="Circular Dependency"),
+                message=f"❌ Cannot create task: Would create Circular Dependency"
+            )
 
         task = Task(
             id=task_id,
@@ -154,9 +212,11 @@ class TaskManager:
 
         task = next((t for t in tasks if t.id == task_id), None)
         if not task:
+            available = [t.id for t in tasks]
+            available_str = f" Available: {', '.join(available[:5])}" if available else ""
             return TaskUpdateResult(
                 task=Task(id=task_id, subject="Not found"),
-                message=f"Task {task_id} not found",
+                message=f"Task {task_id} not found.{available_str}",
                 unblocked_tasks=[],
             )
 
@@ -167,6 +227,24 @@ class TaskManager:
 
         # Add blockers
         if add_blocked_by:
+            # Validate blockers exist
+            try:
+                self._validate_blockers(tasks, add_blocked_by)
+            except ValueError as e:
+                return TaskUpdateResult(
+                    task=task,
+                    message=f"❌ {str(e)}",
+                    unblocked_tasks=[]
+                )
+
+            # Detect circular dependencies
+            if self._detect_circular_dependency(tasks, task_id, add_blocked_by):
+                return TaskUpdateResult(
+                    task=task,
+                    message=f"❌ Cannot add blockers: Would create Circular Dependency",
+                    unblocked_tasks=[]
+                )
+
             for blocker_id in add_blocked_by:
                 if blocker_id not in task.blocked_by:
                     task.blocked_by.append(blocker_id)
@@ -224,8 +302,10 @@ class TaskManager:
         if task:
             return TaskGetResult(task=task, found=True, message=f"Found task {task_id}")
         else:
+            available = [t.id for t in tasks]
+            available_str = f" Available: {', '.join(available[:5])}" if available else ""
             return TaskGetResult(
-                task=None, found=False, message=f"Task {task_id} not found"
+                task=None, found=False, message=f"Task {task_id} not found.{available_str}"
             )
 
     def search_tasks(self, query: str, filter: Optional[str] = None) -> TaskSearchResult:

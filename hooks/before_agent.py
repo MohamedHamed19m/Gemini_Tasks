@@ -58,8 +58,20 @@ def main():
         }))
         
     except Exception as e:
+        # Log to file for debugging
+        error_log = Path.home() / ".gemini" / "hook-errors.log"
+        try:
+            from datetime import datetime
+            error_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_log, "a", encoding="utf-8") as f:
+                f.write(f"[{datetime.now()}] BeforeAgent: {str(e)}\n")
+        except:
+            pass
+            
         sys.stderr.write(f"BeforeAgent hook error: {str(e)}\n")
-        print(json.dumps({}))
+        print(json.dumps({
+            "systemMessage": f"⚠️ BeforeAgent error (logged): {str(e)[:50]}..."
+        }))
 
 if __name__ == "__main__":
     main()

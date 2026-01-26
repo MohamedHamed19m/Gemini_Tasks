@@ -115,6 +115,7 @@ def run_verification():
 
 def main():
     """Main execution logic for the Ralph hook."""
+    state = {"iteration": 0} # Default for error logging
     try:
         input_raw = sys.stdin.read()
         if not input_raw:
@@ -133,12 +134,13 @@ def main():
         
         state = load_state()
         state["iteration"] += 1
+        iteration = state["iteration"]
         save_state(state)
         
-        sys.stderr.write(f"Ralph iteration {state['iteration']}/{MAX_ITERATIONS}\n")
+        sys.stderr.write(f"Ralph iteration {iteration}/{MAX_ITERATIONS}\n")
         
         # Check max iterations
-        if state["iteration"] >= MAX_ITERATIONS:
+        if iteration >= MAX_ITERATIONS:
             sys.stderr.write("Max iterations reached, forcing stop\n")
             clear_state()
             print(json.dumps({
@@ -155,7 +157,7 @@ def main():
             print(json.dumps({
                 "decision": "deny",
                 "reason": f'You must continue working until you output "{COMPLETION_PROMISE}". Check tasks and verification.',
-                "systemMessage": "🔄 Ralph loop continuing..."
+                "systemMessage": f"🔄 Iteration {iteration}/{MAX_ITERATIONS}: Missing '{COMPLETION_PROMISE}' keyword"
             }))
             return
             
@@ -165,11 +167,12 @@ def main():
         tasks_ok, tasks_reason, incomplete_tasks = check_tasks_complete()
         if not tasks_ok:
             sys.stderr.write(f"Tasks incomplete: {tasks_reason}\n")
+            incomplete_count = len(incomplete_tasks)
             incomplete_str = "\n".join([f"- {t.get('id')}: {t.get('subject')} ({t.get('status')})" for t in incomplete_tasks])
             print(json.dumps({
                 "decision": "deny",
                 "reason": f'Work incomplete: {tasks_reason}\n\nIncomplete tasks:\n{incomplete_str}\n\nComplete these tasks before outputting "{COMPLETION_PROMISE}".',
-                "systemMessage": "❌ Tasks incomplete, continuing work..."
+                "systemMessage": f"❌ Iteration {iteration}/{MAX_ITERATIONS}: {incomplete_count} tasks incomplete"
             }))
             return
             
@@ -180,7 +183,7 @@ def main():
             print(json.dumps({
                 "decision": "deny",
                 "reason": f"Verification failed: {verify_reason}\n\nOutput:\n{verify_output}\n\nFix the issues and run verification again.",
-                "systemMessage": "❌ Verification failed, fixing issues..."
+                "systemMessage": f"⚠️ Iteration {iteration}/{MAX_ITERATIONS}: Tests failing (see output)"
             }))
             return
             
@@ -193,13 +196,22 @@ def main():
         
         print(json.dumps({
             "decision": "allow",
-            "systemMessage": f"✅ Ralph loop complete! {completed_count} tasks completed in {state['iteration']} iterations. 🎉"
+            "systemMessage": f"✅ Ralph loop complete! {completed_count} tasks completed in {iteration} iterations. 🎉"
         }))
         
     except Exception as e:
+        # Log to file for debugging
+        error_log = Path.home() / ".gemini" / "hook-errors.log"
+        try:
+            error_log.parent.mkdir(parents=True, exist_ok=True)
+            with open(error_log, "a", encoding="utf-8") as f:
+                f.write(f"[{datetime.now()}] AfterAgent: {str(e)}\n")
+        except:
+            pass
+            
         sys.stderr.write(f"AfterAgent hook error: {str(e)}\n")
         print(json.dumps({
-            "systemMessage": f"⚠️  Hook error: {str(e)}"
+            "systemMessage": f"⚠️ Hook error (logged): {str(e)[:50]}..."
         }))
 
 if __name__ == "__main__":
