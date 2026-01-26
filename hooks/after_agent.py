@@ -85,28 +85,26 @@ def run_verification():
     
     if verify_ps1.exists():
         verify_script = verify_ps1
-        command = f'powershell -ExecutionPolicy Bypass -File "{verify_ps1}"'
+        command = ['powershell', '-ExecutionPolicy', 'Bypass', '-File', str(verify_ps1)]
     elif verify_ps1_alt.exists():
         verify_script = verify_ps1_alt
-        command = f'powershell -ExecutionPolicy Bypass -File "{verify_ps1_alt}"'
+        command = ['powershell', '-ExecutionPolicy', 'Bypass', '-File', str(verify_ps1_alt)]
     elif verify_sh.exists():
         verify_script = verify_sh
-        command = f'bash "{verify_sh}"' if os.name == "nt" else f'sh "{verify_sh}"'
+        command = ['bash', str(verify_sh)] if os.name == "nt" else ['sh', str(verify_sh)]
     elif verify_sh_alt.exists():
         verify_script = verify_sh_alt
-        command = f'bash "{verify_sh_alt}"' if os.name == "nt" else f'sh "{verify_sh_alt}"'
+        command = ['bash', str(verify_sh_alt)] if os.name == "nt" else ['sh', str(verify_sh_alt)]
     elif verify_js.exists():
         verify_script = verify_js
-        command = f'node "{verify_js}"'
+        command = ['node', str(verify_js)]
         
     if not verify_script:
-        return True, "No verification script found (skipped)", ""
+        return True, "No verification script found", ""
     
     try:
-        # Use shell=True for command strings on Windows
         result = subprocess.run(
-            str(command),
-            shell=True,
+            command,
             capture_output=True,
             text=True,
             check=True
@@ -125,7 +123,9 @@ def main():
             
         input_data = json.loads(input_raw)
         
+        # If Ralph mode not enabled, pass through
         if not RALPH_MODE:
+            sys.stderr.write("Ralph mode not enabled, passing through\n")
             print(json.dumps({}))
             return
             
@@ -137,6 +137,7 @@ def main():
         
         sys.stderr.write(f"Ralph iteration {state['iteration']}/{MAX_ITERATIONS}\n")
         
+        # Check max iterations
         if state["iteration"] >= MAX_ITERATIONS:
             sys.stderr.write("Max iterations reached, forcing stop\n")
             clear_state()
@@ -146,30 +147,33 @@ def main():
             }))
             return
             
+        # Check for completion promise
         has_completion_promise = COMPLETION_PROMISE.lower() in prompt_response.lower()
         
         if not has_completion_promise:
             sys.stderr.write("No completion promise found, continuing loop\n")
             print(json.dumps({
                 "decision": "deny",
-                "reason": f"You must continue working until you output \"{COMPLETION_PROMISE}\". Check tasks and verification.",
+                "reason": f'You must continue working until you output "{COMPLETION_PROMISE}". Check tasks and verification.',
                 "systemMessage": "🔄 Ralph loop continuing..."
             }))
             return
             
         sys.stderr.write("Completion promise found, verifying...\n")
         
+        # Check tasks
         tasks_ok, tasks_reason, incomplete_tasks = check_tasks_complete()
         if not tasks_ok:
             sys.stderr.write(f"Tasks incomplete: {tasks_reason}\n")
             incomplete_str = "\n".join([f"- {t.get('id')}: {t.get('subject')} ({t.get('status')})" for t in incomplete_tasks])
             print(json.dumps({
                 "decision": "deny",
-                "reason": f"Work incomplete: {tasks_reason}\n\nIncomplete tasks:\n{incomplete_str}\n\nComplete these tasks before outputting \"{COMPLETION_PROMISE}\".",
+                "reason": f'Work incomplete: {tasks_reason}\n\nIncomplete tasks:\n{incomplete_str}\n\nComplete these tasks before outputting "{COMPLETION_PROMISE}".',
                 "systemMessage": "❌ Tasks incomplete, continuing work..."
             }))
             return
             
+        # Run verification
         verify_ok, verify_reason, verify_output = run_verification()
         if not verify_ok:
             sys.stderr.write(f"Verification failed: {verify_reason}\n")
@@ -180,6 +184,7 @@ def main():
             }))
             return
             
+        # All checks passed!
         sys.stderr.write("All verification passed, allowing stop\n")
         clear_state()
         

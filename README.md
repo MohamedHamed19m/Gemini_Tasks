@@ -1,84 +1,456 @@
-# Gemini Tasks Extension
+# Gemini Tasks - Ralph Wiggum Autonomous Loops
 
-Task management for Gemini CLI with AI-driven MCP tools.
+Task management extension for Gemini CLI with autonomous coding loops, inspired by Claude Code's native task management.
 
-## Features
+## 🌟 Features
 
-✓ AI can autonomously create and manage tasks
-✓ Task dependencies and blockers
-✓ Multi-session coordination via GEMINI_TASK_LIST_ID
-✓ Persistent storage in ~/.gemini/tasks/
-✓ Status lifecycle: pending → in_progress → completed
-✓ Ralph Wiggum autonomous loop support
-✓ Verification-first workflow
+### 🤖 **Ralph Wiggum Autonomous Loops**
+- Autonomous coding that works while you sleep
+- Automatic verification before task completion
+- Test-driven development support
+- Safety brake with max iterations
+- Completion promise verification
 
-## MCP Tools
+### ✨ **Advanced Task Management**
+- AI autonomously creates and manages tasks
+- Task dependencies and blockers
+- Multi-session coordination
+- Persistent storage across sessions
+- Status lifecycle: `pending → in_progress → completed`
 
-- `tasks_list` - List tasks with optional filter
-- `tasks_create` - Create new task with dependencies
-- `tasks_update` - Update status and blockers
-- `tasks_get` - Get task details
-- `tasks_search` - Search tasks by keyword
-- `tasks_clear` - Clear completed/all tasks
+### 🪟 **Windows 11 Native Support**
+- PowerShell hooks and scripts
+- Native Windows path handling
+- PowerShell helper functions
+- One-command setup script
 
-## Installation
+## 🚀 Quick Start
 
-See main documentation for detailed installation steps.
+### Installation
 
-Quick install:
-```bash
-cd server
-uv venv
-uv pip install -r requirements.txt
-cd ..
-gemini extensions link ~/.gemini/extensions/gemini-tasks
+**Windows (PowerShell):**
+```powershell
+# Install extension
+gemini extensions install https://github.com/MohamedHamed19m/Gemini_Tasks
+
+# Run automated setup
+cd C:\Users\user\.gemini\extensions\gemini-tasks
+.\scripts\setup-windows.ps1
 ```
 
-## Usage
+### Enable Ralph Mode
 
-Simply tell Gemini what you want to build, and it will:
-1. Break work into tasks with dependencies
-2. Work through tasks in order
-3. Verify each step before marking complete
-4. Coordinate across sessions if using shared task list
+**PowerShell:**
+```powershell
+# Enable Ralph Wiggum autonomous loops
+$env:GEMINI_RALPH_MODE = "true"
+$env:GEMINI_MAX_ITERATIONS = "25"
+$env:GEMINI_TASK_LIST_ID = "my-project"
 
-## Examples
-
-```
-"Build user authentication - break into tasks"
-"Show me all pending tasks"
-"Work through the tasks autonomously"
-"Start working on the API task"
+# Start Gemini
+gemini
 ```
 
-## Configuration
+### Basic Usage
 
-You can use the provided `.\scripts\setup-windows.ps1` script to automate setup, or configure your environment manually using the variables below.
+**In Gemini CLI:**
+```
+> "Build user authentication with TDD. Work autonomously until complete."
+```
+
+The AI will:
+1. ✅ Break work into dependent tasks
+2. ✅ Work through each task systematically
+3. ✅ Run verification before marking complete
+4. ✅ Only stop when all tasks verified
+
+## 📚 How It Works
+
+### The Ralph Wiggum Loop
+
+```
+User gives instruction
+    ↓
+AI creates tasks with dependencies
+    ↓
+AI works on first unblocked task
+    ↓
+AI tries to finish → AfterAgent Hook intercepts
+    ↓
+Hook checks:
+  - Did AI say "complete"? ❌ → Force retry
+  - All tasks done? ❌ → Force retry  
+  - Tests pass? ❌ → Force retry
+  ✅ All verified → Allow stop
+```
+
+### Task Dependencies
+
+```
+Task 1: Write tests
+   ↓
+Task 2: Implement feature (blocked by Task 1)
+   ↓
+Task 3: Integration tests (blocked by Task 2)
+```
+
+AI automatically respects these dependencies and can't skip ahead.
+
+### Multi-Session Coordination
+
+**Session A:**
+```powershell
+$env:GEMINI_TASK_LIST_ID = "auth-feature"
+gemini
+> "Work on backend tasks"
+```
+
+**Session B:**
+```powershell
+$env:GEMINI_TASK_LIST_ID = "auth-feature"  # Same ID!
+gemini
+> "Work on frontend tasks"
+```
+
+Both sessions share the same task list and coordinate automatically.
+
+## 🛠️ Configuration
 
 ### Environment Variables
 
 | Variable | Description | Default |
-| :--- | :--- | :--- |
-| `GEMINI_RALPH_MODE` | Set to `true` to enable autonomous Ralph loops. | `false` |
-| `GEMINI_TASK_LIST_ID` | The ID of the task list to use (for multi-session work). | `default` |
-| `GEMINI_MAX_ITERATIONS` | Safety limit for autonomous loops before forcing a stop. | `25` |
-| `GEMINI_COMPLETION_PROMISE` | The keyword the AI must output to signal work is done. | `complete` |
+|----------|-------------|---------|
+| `GEMINI_RALPH_MODE` | Enable autonomous Ralph loops | `false` |
+| `GEMINI_MAX_ITERATIONS` | Max loop iterations (safety brake) | `25` |
+| `GEMINI_TASK_LIST_ID` | Task list identifier for multi-session | `default` |
+| `GEMINI_COMPLETION_PROMISE` | Keyword AI must output to signal done | `complete` |
 
-### Manual Windows Setup (CMD)
+### PowerShell Profile Setup
 
-To set these for your current session:
-```cmd
-set GEMINI_RALPH_MODE=true
-set GEMINI_TASK_LIST_ID=my-project-name
+Add to your PowerShell profile for permanent configuration:
+
+```powershell
+# Edit profile
+notepad $PROFILE
+
+# Add these lines:
+$env:GEMINI_RALPH_MODE = "true"
+$env:GEMINI_MAX_ITERATIONS = "25"
 ```
 
-To set them permanently for your user account:
-```cmd
-setx GEMINI_RALPH_MODE true
-setx GEMINI_MAX_ITERATIONS 25
+### Project Verification Scripts
+
+Create custom verification in your project:
+
+**Windows (`.gemini/verify.ps1`):**
+```powershell
+#!/usr/bin/env pwsh
+Write-Host "Running verification..." -ForegroundColor Yellow
+
+# Run tests
+npm test
+
+# Run linting
+npm run lint
+
+# Type checking
+npm run type-check
+
+Write-Host "✓ All checks passed" -ForegroundColor Green
+exit 0
 ```
 
-## Storage
+## 📖 MCP Tools
 
-- **Tasks:** `%USERPROFILE%\.gemini\tasks\<task-list-id>.json`
-- **Loop State:** `%USERPROFILE%\.gemini\ralph-state\<task-list-id>.json`
+The extension provides these MCP tools for AI to use:
+
+### `tasks_list`
+List all tasks with optional status filter.
+
+**Parameters:**
+- `filter` (optional): `"all"`, `"pending"`, `"in_progress"`, `"completed"`
+
+**Example:**
+```
+AI: tasks_list(filter="pending")
+```
+
+### `tasks_create`
+Create a new task with dependencies.
+
+**Parameters:**
+- `subject` (required): Task title
+- `description` (optional): Detailed description
+- `blocked_by` (optional): List of task IDs this task depends on
+
+**Example:**
+```
+AI: tasks_create(
+    subject="Implement auth API",
+    description="JWT tokens, bcrypt passwords",
+    blocked_by=["task-1"]
+)
+```
+
+### `tasks_update`
+Update task status and blockers.
+
+**Parameters:**
+- `task_id` (required): Task ID to update
+- `status` (optional): `"pending"`, `"in_progress"`, `"completed"`
+- `add_blocked_by` (optional): Add task IDs as blockers
+- `remove_blocked_by` (optional): Remove blocker task IDs
+
+**Example:**
+```
+AI: tasks_update(task_id="task-1", status="completed")
+```
+
+### `tasks_get`
+Get full details of a specific task.
+
+**Parameters:**
+- `task_id` (required): Task ID to retrieve
+
+### `tasks_search`
+Search tasks by keyword.
+
+**Parameters:**
+- `query` (required): Search keywords
+- `filter` (optional): Status filter
+
+### `tasks_clear`
+Clear completed or all tasks.
+
+**Parameters:**
+- `filter` (optional): `"completed"` (default) or `"all"`
+
+## 💡 Usage Examples
+
+### Example 1: Basic Task Creation
+
+```
+> "Create three tasks: Setup, Development, Testing. 
+   Make Development blocked by Setup, and Testing blocked by Development."
+```
+
+**Result:**
+```
+✓ task-1: Setup (pending)
+✓ task-2: Development (pending, blocked by task-1)
+✓ task-3: Testing (pending, blocked by task-2)
+```
+
+### Example 2: Test-Driven Development
+
+```
+> "Implement user login with TDD:
+   1. Write tests first
+   2. Implement login logic
+   3. Add integration tests
+   Work autonomously until all tests pass."
+```
+
+**AI will:**
+1. Create tasks with proper dependencies
+2. Write tests (they fail initially)
+3. Implement code until tests pass
+4. Verify before marking complete
+5. Output "complete" only when done
+
+### Example 3: Overnight Autonomous Work
+
+**Before bed:**
+```powershell
+$env:GEMINI_RALPH_MODE = "true"
+$env:GEMINI_MAX_ITERATIONS = "50"
+$env:GEMINI_TASK_LIST_ID = "payment-feature"
+
+gemini
+```
+
+```
+> "Integrate Stripe payments:
+   - Add Stripe SDK
+   - Create payment endpoints with tests
+   - Add webhook handlers
+   - Build payment UI
+   Work autonomously overnight. Only say 'complete' when all tests pass."
+```
+
+**Next morning:**
+```
+✅ Ralph loop complete! 8 tasks completed in 23 iterations. 🎉
+
+- All tests passing
+- Code reviewed and clean
+- Ready to deploy
+```
+
+### Example 4: Multi-Session Parallel Work
+
+**Terminal 1 - Backend:**
+```powershell
+$env:GEMINI_TASK_LIST_ID = "user-profile"
+gemini
+> "Work on backend API tasks for user profile"
+```
+
+**Terminal 2 - Frontend:**
+```powershell
+$env:GEMINI_TASK_LIST_ID = "user-profile"
+gemini
+> "Work on frontend UI tasks for user profile"
+```
+
+Both sessions coordinate on shared task list!
+
+## 🎯 Advanced Features
+
+### Verification-First Workflow
+
+The Ralph loop **enforces verification**:
+
+```
+AI marks task complete
+    ↓
+Hook runs .gemini/verify.ps1
+    ↓
+Tests fail? → Force AI to fix
+Tests pass? → Allow completion
+```
+
+**AI cannot mark tasks complete without verification passing!**
+
+### Safety Features
+
+**Max Iterations:**
+```powershell
+$env:GEMINI_MAX_ITERATIONS = "10"
+```
+After 10 iterations, loop stops automatically (prevents runaway loops).
+
+**Completion Promise:**
+```powershell
+$env:GEMINI_COMPLETION_PROMISE = "complete"
+```
+AI must explicitly output "complete" to signal done.
+
+**State Persistence:**
+Tasks and loop state survive:
+- Context resets
+- Session restarts
+- System reboots
+
+### Task Discovery
+
+AI can add tasks mid-flight:
+
+```
+Initial: 3 tasks created
+
+During work: AI discovers edge case
+AI creates: task-4 "Handle edge case"
+
+Final: 4 tasks completed
+```
+
+## 📂 Storage Locations
+
+**Windows:**
+- Tasks: `%USERPROFILE%\.gemini\tasks\<task-list-id>.json`
+- Ralph state: `%USERPROFILE%\.gemini\ralph-state\<task-list-id>.json`
+
+**Linux/Mac:**
+- Tasks: `~/.gemini/tasks/<task-list-id>.json`
+- Ralph state: `~/.gemini/ralph-state/<task-list-id>.json`
+
+## 🔧 Troubleshooting
+
+### Ralph Loop Not Working
+
+**Check environment variables:**
+```powershell
+Write-Host "RALPH_MODE: $env:GEMINI_RALPH_MODE"
+Write-Host "MAX_ITERATIONS: $env:GEMINI_MAX_ITERATIONS"
+```
+
+Should show:
+```
+RALPH_MODE: true
+MAX_ITERATIONS: 25
+```
+
+**Verify hooks enabled:**
+```
+/hooks panel
+```
+
+Should show:
+```
+✓ display-tasks [enabled]
+✓ ralph-loop-check [enabled]
+```
+
+### Tasks Not Persisting
+
+**Check tasks directory:**
+```powershell
+Get-ChildItem "$env:USERPROFILE\.gemini\tasks\"
+```
+
+**Check file contents:**
+```powershell
+cat "$env:USERPROFILE\.gemini\tasks\default.json"
+```
+
+### Hooks Not Firing
+
+**Check extension installed:**
+```
+gemini extensions list
+```
+
+Should show:
+```
+✓ gemini-tasks v1.0.0
+```
+
+**Reinstall if needed:**
+```powershell
+gemini extensions uninstall gemini-tasks
+gemini extensions install C:\path\to\gemini-tasks
+```
+
+## 📊 Performance Tips
+
+**For overnight work:**
+```powershell
+$env:GEMINI_MAX_ITERATIONS = "50"  # Higher limit
+```
+
+**For testing:**
+```powershell
+$env:GEMINI_MAX_ITERATIONS = "5"   # Quick safety brake
+```
+
+**For complex projects:**
+```powershell
+$env:GEMINI_TASK_LIST_ID = "feature-$(Get-Date -Format 'yyyyMMdd')"
+# Creates daily task lists: feature-20250126
+```
+
+## 🙏 Credits
+
+Inspired by:
+- Claude Code's native task management
+- Ralph Wiggum autonomous loop technique
+- The agentic coding community
+
+
+## 🚀 What's Next?
+
+- [ ] Task priorities (high/medium/low)
+- [ ] Add UI to show Tasks using Gemini Cli Hooks
+
+---

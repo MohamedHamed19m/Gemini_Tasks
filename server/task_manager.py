@@ -173,6 +173,10 @@ class TaskManager:
 
         # Remove blockers
         if remove_blocked_by:
+            for blocker_id in remove_blocked_by:
+                blocker_task = next((t for t in tasks if t.id == blocker_id), None)
+                if blocker_task and task_id in blocker_task.blocks:
+                    blocker_task.blocks.remove(task_id)
             task.blocked_by = [
                 bid for bid in task.blocked_by if bid not in remove_blocked_by
             ]
@@ -187,15 +191,11 @@ class TaskManager:
         if status == "completed":
             for other_task in tasks:
                 if task_id in other_task.blocked_by:
-                    # Check if all blockers are completed
-                    all_blockers_done = all(
-                        next((t for t in tasks if t.id == bid), None)
-                        and next((t for t in tasks if t.id == bid), None).status
-                        == "completed"
-                        for bid in other_task.blocked_by
-                    )
-                    if all_blockers_done:
+                    other_task.blocked_by.remove(task_id)
+                    # If other_task is now completely unblocked
+                    if not other_task.blocked_by:
                         unblocked_tasks.append(other_task.id)
+            task.blocks = [] # A completed task no longer blocks any others
 
         # Save all tasks
         self.storage.save_tasks([t.model_dump() for t in tasks])

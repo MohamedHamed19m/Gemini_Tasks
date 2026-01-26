@@ -37,16 +37,16 @@ def main():
             print(json.dumps({}))
             return
             
-        # Build task display
-        task_display = "📋 Active Tasks:"
+        # Build task display with proper newlines
+        task_display = "\n📋 Active Tasks:\n"
         for task in pending[:10]:
             icon = "⟳" if task.get("status") == "in_progress" else "○"
             blockers_list = task.get("blocked_by", [])
             blockers = f" [blocked by: {', '.join(blockers_list)}]" if blockers_list else ""
-            task_display += f"  {icon} {task.get('id')}: {task.get('subject')}{blockers}"
+            task_display += f"  {icon} {task.get('id')}: {task.get('subject')}{blockers}\n"
             
         if len(pending) > 10:
-            task_display += f"  ... and {len(pending) - 10} more"
+            task_display += f"  ... and {len(pending) - 10} more\n"
             
         # Inject as additional context
         print(json.dumps({
@@ -58,7 +58,7 @@ def main():
         }))
         
     except Exception as e:
-        sys.stderr.write(f"BeforeAgent hook error: {str(e)}")
+        sys.stderr.write(f"BeforeAgent hook error: {str(e)}\n")
         print(json.dumps({}))
 
 if __name__ == "__main__":
