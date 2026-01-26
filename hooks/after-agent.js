@@ -78,8 +78,10 @@ function runVerification() {
   
   // Check for PowerShell script first (Windows)
   const verifyPs1 = path.join(projectDir, '.gemini', 'verify.ps1');
+  const verifyPs1Alt = path.join(projectDir, 'scripts', 'verify.ps1');
   // Then check for bash script (WSL/Git Bash)
   const verifySh = path.join(projectDir, '.gemini', 'verify.sh');
+  const verifyShAlt = path.join(projectDir, 'scripts', 'verify.sh');
   // Then check for Node.js script
   const verifyJs = path.join(projectDir, '.gemini', 'verify.js');
   
@@ -89,12 +91,20 @@ function runVerification() {
   if (fs.existsSync(verifyPs1)) {
     verifyScript = verifyPs1;
     command = `powershell -ExecutionPolicy Bypass -File "${verifyPs1}"`;
+  } else if (fs.existsSync(verifyPs1Alt)) {
+    verifyScript = verifyPs1Alt;
+    command = `powershell -ExecutionPolicy Bypass -File "${verifyPs1Alt}"`;
   } else if (fs.existsSync(verifySh)) {
     verifyScript = verifySh;
     // Try bash (Git Bash) or sh (WSL)
     command = process.platform === 'win32' 
       ? `bash "${verifySh}"` 
       : `sh "${verifySh}"`;
+  } else if (fs.existsSync(verifyShAlt)) {
+    verifyScript = verifyShAlt;
+    command = process.platform === 'win32' 
+      ? `bash "${verifyShAlt}"` 
+      : `sh "${verifyShAlt}"`;
   } else if (fs.existsSync(verifyJs)) {
     verifyScript = verifyJs;
     command = `node "${verifyJs}"`;
