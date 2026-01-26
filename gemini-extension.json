@@ -44,7 +44,7 @@
           {
             "name": "display-tasks",
             "type": "command",
-            "command": "node ${extensionPath}/hooks/before-agent.js",
+            "command": "python ${extensionPath}/hooks/before_agent.py",
             "description": "Display pending tasks before agent starts"
           }
         ]
@@ -57,7 +57,7 @@
           {
             "name": "ralph-loop-check",
             "type": "command",
-            "command": "node ${extensionPath}/hooks/after-agent.js",
+            "command": "python ${extensionPath}/hooks/after_agent.py",
             "description": "Ralph Wiggum loop: verify completion and force retry if needed",
             "timeout": 10000
           }
