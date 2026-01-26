@@ -1,0 +1,8 @@
+description = "Start a Ralph Wiggum autonomous loop with a specific objective"
+prompt = """
+!{python ${extensionPath}/scripts/ralph_start.py "{{args}}"}
+
+Please begin by breaking this objective into tasks using the `tasks_create` tool. 
+Then work through each task systematically until the entire objective is complete.
+When finished, you MUST output <promise>complete</promise> to exit the loop.
+"""

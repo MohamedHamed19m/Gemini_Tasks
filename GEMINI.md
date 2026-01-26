@@ -116,12 +116,12 @@ When GEMINI_RALPH_MODE is enabled, you operate in autonomous loop mode.
 
 ### Completion Promise
 
-To signal you're finished, output the exact phrase: **"complete"**
+To signal you're finished, output the exact phrase: **<promise>complete</promise>**
 
 **CRITICAL RULES:**
-- Do NOT output "complete" unless ALL pending/in_progress tasks are done
-- Do NOT output "complete" unless ALL tests pass
-- Do NOT output "complete" unless work is verified
+- Do NOT output "<promise>complete</promise>" unless ALL pending/in_progress tasks are done
+- Do NOT output "<promise>complete</promise>" unless ALL tests pass
+- Do NOT output "<promise>complete</promise>" unless work is verified
 - Do NOT create tasks retroactively for already-done work
 
 ### Ralph Workflow
@@ -130,7 +130,7 @@ To signal you're finished, output the exact phrase: **"complete"**
 1. tasks_list(filter="pending")  # See what needs doing
 2. If no pending tasks AND no in_progress tasks:
    - Verify all work is actually done
-   - Output "complete"
+   - Output "<promise>complete</promise>"
    - STOP - don't create new tasks
 3. If pending tasks exist:
    - Pick next unblocked task
@@ -157,7 +157,7 @@ git status  # Shows all committed
 tasks_list()  # Shows no tasks
 # Acknowledge work is done
 "All work is complete. Nothing to task-track."
-Output: "complete"
+Output: "<promise>complete</promise>"
 ```
 
 ## Verification-First Approach
@@ -221,7 +221,7 @@ git status  # Shows: "nothing to commit, working tree clean"
 
 # If no pending tasks and work is done:
 "All implementation is complete. No tasks needed."
-Output: "complete"
+Output: "<promise>complete</promise>"
 ```
 
 **DO NOT:**
@@ -267,7 +267,7 @@ AI:
    tasks_list(filter="pending")
    Result: []
    
-6. Output: "complete"
+6. Output: "<promise>complete</promise>"
 ```
 
 **❌ WRONG Approach:**
@@ -280,7 +280,7 @@ tasks_create("Implement feature X")  # Already done!
 tasks_create("Add tests")  # Already done!
 tasks_update("task-1", status="completed")  # Fake work
 tasks_update("task-2", status="completed")  # Fake work
-Output: "complete"
+Output: "<promise>complete</promise>"
 ```
 
 ## Example: TDD Workflow (NEW Work)
@@ -317,7 +317,7 @@ AI:
 4. Verify:
    tasks_list(filter="pending")  # Result: []
    
-5. Output: "complete"
+5. Output: "<promise>complete</promise>"
 ```
 
 ## Example: Resuming Work
@@ -351,7 +351,7 @@ AI:
    [Verify]
    tasks_update("task-3", status="completed")
    
-6. Output: "complete"
+6. Output: "<promise>complete</promise>"
 ```
 
 ## Summary: Key Principles
@@ -360,7 +360,7 @@ AI:
 2. **Match reality** - Tasks should reflect actual work state
 3. **Don't retroactively task** - Don't create tasks for done work
 4. **Verify before complete** - Tests must pass
-5. **Complete when done** - Output "complete" only when verified
+5. **Complete when done** - Output "<promise>complete</promise>" only when verified
 
 ## Anti-Patterns to Avoid
 

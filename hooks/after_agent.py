@@ -7,12 +7,13 @@ import json
 import os
 import sys
 import subprocess
+import re
 from pathlib import Path
 from datetime import datetime
 
 # Configuration
 RALPH_MODE = os.environ.get("GEMINI_RALPH_MODE") == "true"
-MAX_ITERATIONS = int(os.environ.get("GEMINI_MAX_ITERATIONS", "25"))
+MAX_ITERATIONS = int(os.environ.get("GEMINI_MAX_ITERATIONS", "10"))
 COMPLETION_PROMISE = os.environ.get("GEMINI_COMPLETION_PROMISE", "complete")
 TASK_LIST_ID = os.environ.get("GEMINI_TASK_LIST_ID", "default")
 
@@ -22,15 +23,33 @@ state_dir = home_dir / ".gemini" / "ralph-state"
 state_file = state_dir / f"{TASK_LIST_ID}.json"
 tasks_dir = home_dir / ".gemini" / "tasks"
 
+def extract_promise(text):
+    """Extracts content from <promise> tags."""
+    match = re.search(r"<promise>(.*?)</promise>", text, re.IGNORECASE | re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return None
+
 def load_state():
     """Loads the current iteration state from the local JSON file."""
     if not state_file.exists():
-        return {"iteration": 0, "startTime": int(datetime.now().timestamp() * 1000)}
+        return {
+            "iteration": 0, 
+            "startTime": int(datetime.now().timestamp() * 1000),
+            "original_prompt": ""
+        }
     try:
         with open(state_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            state = json.load(f)
+            if "original_prompt" not in state:
+                state["original_prompt"] = ""
+            return state
     except:
-        return {"iteration": 0, "startTime": int(datetime.now().timestamp() * 1000)}
+        return {
+            "iteration": 0, 
+            "startTime": int(datetime.now().timestamp() * 1000),
+            "original_prompt": ""
+        }
 
 def save_state(state):
     """Saves the current iteration state to the local JSON file."""
@@ -121,6 +140,43 @@ def run_verification():
     except subprocess.CalledProcessError as e:
         return False, "Verification failed", e.stderr or e.stdout or str(e)
 
+def log_iteration(state, status, reason):
+    """Logs the details of a single iteration to the project directory."""
+    project_dir = os.environ.get("GEMINI_PROJECT_DIR", os.getcwd())
+    log_file = Path(project_dir) / ".gemini" / "ralph-iterations.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(log_file, "a", encoding="utf-8") as f:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{timestamp}] Iteration {state['iteration']}\n")
+        f.write(f"Status: {status}\n")
+        # Strip internal newlines for the log summary
+        reason_summary = reason.replace("\n", " ")
+        f.write(f"Reason: {reason_summary[:200]}...\n")
+        f.write("-" * 40 + "\n")
+
+def deny_with_context(reason, iteration, sys_msg, state, max_val):
+    """Returns a deny decision with optional context clearing and prompt re-injection."""
+    log_iteration(state, "CONTINUING", sys_msg)
+    original_prompt = state.get("original_prompt", "")
+    
+    # If we have an original prompt, we re-inject it to ensure the agent stays on track
+    # when clearContext is true.
+    if original_prompt:
+        feedback = f"OBJECTIVE: {original_prompt}\n\n{reason}"
+    else:
+        feedback = reason
+
+    return json.dumps({
+        "decision": "deny",
+        "reason": feedback,
+        "systemMessage": f"🔄 Iteration {iteration}/{max_val}: {sys_msg}",
+        "hookSpecificOutput": {
+            "hookEventName": "AfterAgent",
+            "clearContext": True
+        }
+    })
+
 def main():
     """Main execution logic for the Ralph hook."""
     state = {"iteration": 0} # Default for error logging
@@ -132,71 +188,142 @@ def main():
             
         input_data = json.loads(input_raw)
         
-        # If Ralph mode not enabled, pass through
-        if not RALPH_MODE:
-            sys.stderr.write("Ralph mode not enabled, passing through\n")
+        # Check if we are in Ralph Mode (via Env Var OR existing state file)
+        state_exists = state_file.exists()
+        if not RALPH_MODE and not state_exists:
+            # We don't log "not enabled" to stderr every time to keep things quiet
             print(json.dumps({}))
             return
             
         prompt_response = input_data.get("prompt_response", "")
         
-        state = load_state()
-        state["iteration"] += 1
-        iteration = state["iteration"]
-        save_state(state)
+                # Load state (will return defaults if file doesn't exist)
         
-        sys.stderr.write(f"Ralph iteration {iteration}/{MAX_ITERATIONS}\n")
+                state = load_state()
         
-        # Check max iterations
-        if iteration >= MAX_ITERATIONS:
-            sys.stderr.write("Max iterations reached, forcing stop\n")
-            clear_state()
-            print(json.dumps({
-                "systemMessage": f"⚠️  Max iterations ({MAX_ITERATIONS}) reached. Stopping Ralph loop.",
-                "decision": "allow"
-            }))
-            return
-            
-        # Check for completion promise
-        has_completion_promise = COMPLETION_PROMISE.lower() in prompt_response.lower()
+                
         
-        if not has_completion_promise:
-            sys.stderr.write("No completion promise found, continuing loop\n")
-            print(json.dumps({
-                "decision": "deny",
-                "reason": f'You must continue working until you output "{COMPLETION_PROMISE}". Check tasks and verification.',
-                "systemMessage": f"🔄 Iteration {iteration}/{MAX_ITERATIONS}: Missing '{COMPLETION_PROMISE}' keyword"
-            }))
-            return
-            
-        sys.stderr.write("Completion promise found, verifying...\n")
+                # Override global config with state-specific values if they exist
         
-        # Check tasks
-        tasks_ok, tasks_reason, incomplete_tasks = check_tasks_complete()
-        if not tasks_ok:
-            sys.stderr.write(f"Tasks incomplete: {tasks_reason}\n")
-            incomplete_count = len(incomplete_tasks)
-            incomplete_str = "\n".join([f"- {t.get('id')}: {t.get('subject')} ({t.get('status')})" for t in incomplete_tasks])
-            print(json.dumps({
-                "decision": "deny",
-                "reason": f'Work incomplete: {tasks_reason}\n\nIncomplete tasks:\n{incomplete_str}\n\nComplete these tasks before outputting "{COMPLETION_PROMISE}".',
-                "systemMessage": f"❌ Iteration {iteration}/{MAX_ITERATIONS}: {incomplete_count} tasks incomplete"
-            }))
-            return
-            
-        # Run verification
-        verify_ok, verify_reason, verify_output = run_verification()
-        if not verify_ok:
-            sys.stderr.write(f"Verification failed: {verify_reason}\n")
-            print(json.dumps({
-                "decision": "deny",
-                "reason": f"Verification failed: {verify_reason}\n\nOutput:\n{verify_output}\n\nFix the issues and run verification again.",
-                "systemMessage": f"⚠️ Iteration {iteration}/{MAX_ITERATIONS}: Tests failing (see output)"
-            }))
-            return
+                current_max = state.get("max_iterations", MAX_ITERATIONS)
+        
+                current_promise = state.get("completion_promise", COMPLETION_PROMISE)
+        
+        
+        
+                # If RALPH_MODE is false but state file exists, we continue.
+        
+                # If state file doesn't exist but RALPH_MODE is true, we initialize on the fly.
+        
+                state["iteration"] += 1
+        
+                iteration = state["iteration"]
+        
+                save_state(state)
+        
+                
+        
+                sys.stderr.write(f"Ralph iteration {iteration}/{current_max}\n")
+        
+                
+        
+                # Check max iterations
+        
+                if iteration >= current_max:
+        
+                    sys.stderr.write("Max iterations reached, forcing stop\n")
+        
+                    log_iteration(state, "STOPPED", f"Max iterations ({current_max}) reached")
+        
+                    clear_state()
+        
+                    print(json.dumps({
+        
+                        "systemMessage": f"⚠️  Max iterations ({current_max}) reached. Stopping Ralph loop.",
+        
+                        "decision": "allow"
+        
+                    }))
+        
+                    return
+        
+                    
+        
+                # Check for completion promise using XML tags
+        
+                promise_content = extract_promise(prompt_response)
+        
+                has_completion_promise = promise_content and promise_content.lower() == current_promise.lower()
+        
+                
+        
+                if not has_completion_promise:
+        
+                    # Provide helpful feedback if tags are missing or content is wrong
+        
+                    if current_promise.lower() in prompt_response.lower() and not promise_content:
+        
+                        reason = f'You mentioned "{current_promise}" but did not wrap it in <promise> tags. You MUST output <promise>{current_promise}</promise> to signal completion.'
+        
+                    else:
+        
+                        reason = f'You must continue working until you output <promise>{current_promise}</promise>. Check tasks and verification.'
+        
+        
+        
+                    sys.stderr.write("No valid completion promise found, continuing loop\n")
+        
+                    print(deny_with_context(reason, iteration, "Missing <promise> tags", state, current_max))
+        
+                    return
+        
+                    
+        
+                sys.stderr.write("Valid completion promise found, verifying tasks and scripts...\n")
+        
+                
+        
+                # Check tasks
+        
+                tasks_ok, tasks_reason, incomplete_tasks = check_tasks_complete()
+        
+                if not tasks_ok:
+        
+                    sys.stderr.write(f"Tasks incomplete: {tasks_reason}\n")
+        
+                    incomplete_count = len(incomplete_tasks)
+        
+                    incomplete_str = "\n".join([f"- {t.get('id')}: {t.get('subject')} ({t.get('status')})" for t in incomplete_tasks])
+        
+                    
+        
+                    reason = f'Work incomplete: {tasks_reason}\n\nIncomplete tasks:\n{incomplete_str}\n\nComplete these tasks before outputting <promise>{current_promise}</promise>.'
+        
+                    print(deny_with_context(reason, iteration, f"{incomplete_count} tasks incomplete", state, current_max))
+        
+                    return
+        
+                    
+        
+                # Run verification
+        
+                verify_ok, verify_reason, verify_output = run_verification()
+        
+                if not verify_ok:
+        
+                    sys.stderr.write(f"Verification failed: {verify_reason}\n")
+        
+                    reason = f"Verification failed: {verify_reason}\n\nOutput:\n{verify_output}\n\nFix the issues and run verification again."
+        
+                    print(deny_with_context(reason, iteration, "Tests failing", state, current_max))
+        
+                    return
+        
+        
             
         # All checks passed!
         sys.stderr.write("All verification passed, allowing stop\n")
+        log_iteration(state, "COMPLETED", "All checks passed")
         clear_state()
         
         tasks = load_tasks()
@@ -219,7 +346,9 @@ def main():
             
         sys.stderr.write(f"AfterAgent hook error: {str(e)}\n")
         print(json.dumps({
-            "systemMessage": f"⚠️ Hook error (logged): {str(e)[:50]}..."
+            "decision": "deny",
+            "reason": f"Hook error (logged): {str(e)}",
+            "systemMessage": f"⚠️ Hook error: {str(e)[:50]}..."
         }))
 
 if __name__ == "__main__":

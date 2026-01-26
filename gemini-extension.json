@@ -22,7 +22,7 @@
     },
     {
       "name": "Max Iterations",
-      "description": "Maximum Ralph loop iterations before forcing stop (default: 25)",
+      "description": "Maximum Ralph loop iterations before forcing stop (default: 10)",
       "envVar": "GEMINI_MAX_ITERATIONS"
     },
     {

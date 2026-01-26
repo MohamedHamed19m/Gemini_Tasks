@@ -28,13 +28,17 @@ gemini extensions install https://github.com/MohamedHamed19m/Gemini_Tasks
 
 ### Enable Ralph Mode
 
+**Option 1: Command-based (Recommended)**
+Simply start Gemini and use the custom command. No environment variables required!
 ```bash
-# Enable Ralph Wiggum autonomous loops
-export GEMINI_RALPH_MODE="true"
-export GEMINI_MAX_ITERATIONS="25"
-export GEMINI_TASK_LIST_ID="my-project"
+/ralph-start "Build user authentication with TDD"
+```
 
-# Start Gemini
+**Option 2: Global environment mode**
+Force Ralph mode for every session without needing the command.
+```bash
+export GEMINI_RALPH_MODE="true"
+export GEMINI_MAX_ITERATIONS="50"
 gemini
 ```
 
@@ -42,14 +46,27 @@ gemini
 
 **In Gemini CLI:**
 ```
-> "Build user authentication with TDD. Work autonomously until complete."
+> /ralph-start "Build user authentication with TDD"
 ```
 
 The AI will:
 1. ✅ Break work into dependent tasks
-2. ✅ Work through each task systematically
+2. ✅ Work through each task systematically (clearing context each turn to save tokens)
 3. ✅ Run verification before marking complete
-4. ✅ Only stop when all tasks verified
+4. ✅ Only stop when it outputs `<promise>complete</promise>`
+
+## 🚀 Commands
+
+### `/ralph-start`
+Initialize a Ralph loop session with a specific objective. This command automatically captures the goal to ensure the agent stays on track even when memory is reset.
+
+**Usage:**
+```
+/ralph-start "Your objective here"
+```
+
+### `/ralph-cancel`
+Cancels the active Ralph loop state for the current session.
 
 ## 📚 How It Works
 
@@ -74,7 +91,7 @@ Hook checks:
 ### The Validation
 
 The hook script strictly enforces completion by checking three critical conditions:
-*   **Completion Promise**: Did the agent explicitly output the "completion promise" (the word `complete`)?
+*   **Completion Promise**: Did the agent explicitly output the "completion promise" wrapped in XML tags (e.g., `<promise>complete</promise>`)?
 *   **Task Integrity**: Are all tasks in the database marked with the `completed` status?
 *   **Project Verification**: Does the project's verification script (`verify.ps1`, `verify.py`, etc.) exit with code 0?
 
@@ -115,7 +132,7 @@ Both sessions share the same task list and coordinate automatically.
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GEMINI_RALPH_MODE` | Enable autonomous Ralph loops | `false` |
-| `GEMINI_MAX_ITERATIONS` | Max loop iterations (safety brake) | `25` |
+| `GEMINI_MAX_ITERATIONS` | Max loop iterations (safety brake) | `10` |
 | `GEMINI_TASK_LIST_ID` | Task list identifier for multi-session | `default` |
 | `GEMINI_COMPLETION_PROMISE` | Keyword AI must output to signal done | `complete` |
 
@@ -231,7 +248,8 @@ Clear completed or all tasks.
    1. Write tests first
    2. Implement login logic
    3. Add integration tests
-   Work autonomously until all tests pass."
+   Work autonomously until all tests pass. 
+   Output <promise>complete</promise> when finished."
 ```
 
 **AI will:**
