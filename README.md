@@ -241,42 +241,38 @@ Clear completed or all tasks.
 ✓ task-3: Testing (pending, blocked by task-2)
 ```
 
-### Example 2: Test-Driven Development
+### Example 2: Test-Driven Development (TDD)
 
-```
-> "Implement user login with TDD:
-   1. Write tests first
-   2. Implement login logic
-   3. Add integration tests
-   Work autonomously until all tests pass. 
-   Output <promise>complete</promise> when finished."
+```bash
+/ralph-start "Implement a User authentication module in Python. Requirements: 1. Signup/Login functions, 2. JWT token generation, 3. Password hashing with bcrypt. Follow TDD: write tests first, then implement until they pass."
 ```
 
 **AI will:**
-1. Create tasks with proper dependencies
-2. Write tests (they fail initially)
-3. Implement code until tests pass
-4. Verify before marking complete
-5. Output "complete" only when done
+1. Create tasks with proper dependencies (e.g., `Write tests`, `Implement auth`).
+2. Write tests (they fail initially).
+3. Implement code iteratively until tests pass.
+4. Clear its own context memory between turns to stay fast and token-efficient.
+5. Output `<promise>complete</promise>` only when all verification passes.
 
-### Example 3: Overnight Autonomous Work
+### Example 3: Complex Refactoring
+
+```bash
+/ralph-start "Refactor the existing 'server/storage.py' to use an async database driver. Update all call sites. Only finish when the code is lint-free and verified." 20
+```
+*(Note: the `20` at the end sets a custom limit of 20 iterations for this complex task.)*
+
+**AI will:**
+1. Analyze the codebase.
+2. Perform refactoring in atomic steps.
+3. Use the re-injected **OBJECTIVE** to stay on track even after context resets.
+4. Verify results after each major change.
+
+### Example 4: Overnight Autonomous Work
 
 **Before bed:**
 ```powershell
-$env:GEMINI_RALPH_MODE = "true"
 $env:GEMINI_MAX_ITERATIONS = "50"
-$env:GEMINI_TASK_LIST_ID = "payment-feature"
-
-gemini
-```
-
-```
-> "Integrate Stripe payments:
-   - Add Stripe SDK
-   - Create payment endpoints with tests
-   - Add webhook handlers
-   - Build payment UI
-   Work autonomously overnight. Only say 'complete' when all tests pass."
+/ralph-start "Integrate Stripe payments: SDK, endpoints, webhooks, and UI." 50
 ```
 
 **Next morning:**
@@ -288,7 +284,7 @@ gemini
 - Ready to deploy
 ```
 
-### Example 4: Multi-Session Parallel Work
+### Example 5: Multi-Session Parallel Work
 
 **Terminal 1 - Backend:**
 ```powershell
