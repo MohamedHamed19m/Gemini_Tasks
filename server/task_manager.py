@@ -1,6 +1,6 @@
 """Task management logic."""
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from pathlib import Path
 
 from models import (
@@ -168,7 +168,7 @@ class TaskManager:
         if self._detect_circular_dependency(tasks, task_id, blocked_by):
             return TaskCreateResult(
                 task=Task(id="error", subject="Circular Dependency"),
-                message=f"❌ Cannot create task: Would create Circular Dependency",
+                message="❌ Cannot create task: Would create Circular Dependency",
             )
 
         task = Task(
@@ -226,7 +226,6 @@ class TaskManager:
 
         # Update status
         if status:
-            old_status = task.status
             task.status = status
 
         # Add blockers
@@ -243,7 +242,7 @@ class TaskManager:
             if self._detect_circular_dependency(tasks, task_id, add_blocked_by):
                 return TaskUpdateResult(
                     task=task,
-                    message=f"❌ Cannot add blockers: Would create Circular Dependency",
+                    message="❌ Cannot add blockers: Would create Circular Dependency",
                     unblocked_tasks=[],
                 )
 

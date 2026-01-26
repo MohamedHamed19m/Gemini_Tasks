@@ -1,7 +1,5 @@
 import pytest
 from task_manager import TaskManager
-import os
-import json
 
 
 @pytest.fixture

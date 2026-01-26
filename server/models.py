@@ -1,7 +1,6 @@
 """Pydantic models for task management."""
 
 from typing import List, Optional, Literal
-from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 

@@ -1,6 +1,5 @@
 import pytest
 from task_manager import TaskManager
-from models import Task
 
 
 @pytest.fixture
