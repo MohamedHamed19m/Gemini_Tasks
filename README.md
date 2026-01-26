@@ -141,22 +141,14 @@ $env:GEMINI_MAX_ITERATIONS = "25"
 ### Project Verification Scripts
 
 Create custom verification in your project:
+it can contains tests or other scripts, its important that it return (exit 0) if success if not then it would enter the loop.
 
 **Windows (`.gemini/verify.ps1`):**
 ```powershell
 #!/usr/bin/env pwsh
-Write-Host "Running verification..." -ForegroundColor Yellow
-
 # Run tests
 npm test
 
-# Run linting
-npm run lint
-
-# Type checking
-npm run type-check
-
-Write-Host "✓ All checks passed" -ForegroundColor Green
 exit 0
 ```
 

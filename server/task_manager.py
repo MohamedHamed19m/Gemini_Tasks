@@ -21,7 +21,7 @@ class TaskManager:
 
     def __init__(self, base_dir: Optional[Path] = None):
         """Initialize task manager with storage.
-        
+
         Args:
             base_dir: Optional base directory for tasks.
         """
@@ -68,40 +68,45 @@ class TaskManager:
             if blocker and task_id not in blocker.blocks:
                 blocker.blocks.append(task_id)
 
-    def _detect_circular_dependency(self, tasks: List[Task], task_id: str, blocked_by: List[str]) -> bool:
+    def _detect_circular_dependency(
+        self, tasks: List[Task], task_id: str, blocked_by: List[str]
+    ) -> bool:
         """Prevent circular dependencies.
-        
+
         Args:
             tasks: Current list of tasks
             task_id: ID of the task to check
             blocked_by: List of task IDs this task will be blocked by
-            
+
         Returns:
             True if adding these blockers would create a cycle
         """
+
         def has_path(from_id: str, to_id: str, visited: set) -> bool:
             if from_id == to_id:
                 return True
             if from_id in visited:
                 return False
             visited.add(from_id)
-            
+
             from_task = next((t for t in tasks if t.id == from_id), None)
             if not from_task:
                 return False
-            
-            return any(has_path(bid, to_id, visited.copy()) for bid in from_task.blocked_by)
-        
+
+            return any(
+                has_path(bid, to_id, visited.copy()) for bid in from_task.blocked_by
+            )
+
         # Check if adding any of these blockers creates a cycle back to task_id
         return any(has_path(bid, task_id, set()) for bid in blocked_by)
 
     def _validate_blockers(self, tasks: List[Task], blocked_by: List[str]) -> None:
         """Ensure blocker tasks exist.
-        
+
         Args:
             tasks: Current list of tasks
             blocked_by: List of task IDs to validate
-            
+
         Raises:
             ValueError: If any blocker task ID is not found
         """
@@ -157,14 +162,14 @@ class TaskManager:
         except ValueError as e:
             return TaskCreateResult(
                 task=Task(id="error", subject="Validation Error"),
-                message=f"❌ {str(e)}"
+                message=f"❌ {str(e)}",
             )
 
         # Detect circular dependencies
         if self._detect_circular_dependency(tasks, task_id, blocked_by):
             return TaskCreateResult(
                 task=Task(id="error", subject="Circular Dependency"),
-                message=f"❌ Cannot create task: Would create Circular Dependency"
+                message=f"❌ Cannot create task: Would create Circular Dependency",
             )
 
         task = Task(
@@ -184,9 +189,7 @@ class TaskManager:
         # Save all tasks
         self.storage.save_tasks([t.model_dump() for t in tasks])
 
-        return TaskCreateResult(
-            task=task, message=f"Created task {task_id}: {subject}"
-        )
+        return TaskCreateResult(task=task, message=f"Created task {task_id}: {subject}")
 
     def update_task(
         self,
@@ -213,7 +216,9 @@ class TaskManager:
         task = next((t for t in tasks if t.id == task_id), None)
         if not task:
             available = [t.id for t in tasks]
-            available_str = f" Available: {', '.join(available[:5])}" if available else ""
+            available_str = (
+                f" Available: {', '.join(available[:5])}" if available else ""
+            )
             return TaskUpdateResult(
                 task=Task(id=task_id, subject="Not found"),
                 message=f"Task {task_id} not found.{available_str}",
@@ -232,9 +237,7 @@ class TaskManager:
                 self._validate_blockers(tasks, add_blocked_by)
             except ValueError as e:
                 return TaskUpdateResult(
-                    task=task,
-                    message=f"❌ {str(e)}",
-                    unblocked_tasks=[]
+                    task=task, message=f"❌ {str(e)}", unblocked_tasks=[]
                 )
 
             # Detect circular dependencies
@@ -242,7 +245,7 @@ class TaskManager:
                 return TaskUpdateResult(
                     task=task,
                     message=f"❌ Cannot add blockers: Would create Circular Dependency",
-                    unblocked_tasks=[]
+                    unblocked_tasks=[],
                 )
 
             for blocker_id in add_blocked_by:
@@ -273,7 +276,7 @@ class TaskManager:
                     # If other_task is now completely unblocked
                     if not other_task.blocked_by:
                         unblocked_tasks.append(other_task.id)
-            task.blocks = [] # A completed task no longer blocks any others
+            task.blocks = []  # A completed task no longer blocks any others
 
         # Save all tasks
         self.storage.save_tasks([t.model_dump() for t in tasks])
@@ -303,12 +306,18 @@ class TaskManager:
             return TaskGetResult(task=task, found=True, message=f"Found task {task_id}")
         else:
             available = [t.id for t in tasks]
-            available_str = f" Available: {', '.join(available[:5])}" if available else ""
+            available_str = (
+                f" Available: {', '.join(available[:5])}" if available else ""
+            )
             return TaskGetResult(
-                task=None, found=False, message=f"Task {task_id} not found.{available_str}"
+                task=None,
+                found=False,
+                message=f"Task {task_id} not found.{available_str}",
             )
 
-    def search_tasks(self, query: str, filter: Optional[str] = None) -> TaskSearchResult:
+    def search_tasks(
+        self, query: str, filter: Optional[str] = None
+    ) -> TaskSearchResult:
         """Search tasks by keyword.
 
         Args:
@@ -355,7 +364,8 @@ class TaskManager:
             cleared_count = len(tasks)
             self.storage.save_tasks([])
             return TaskClearResult(
-                cleared_count=cleared_count, message=f"Cleared all {cleared_count} tasks"
+                cleared_count=cleared_count,
+                message=f"Cleared all {cleared_count} tasks",
             )
 
         # Clear only tasks matching filter

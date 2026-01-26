@@ -12,7 +12,7 @@ class TaskStorage:
 
     def __init__(self, base_dir: Optional[Path] = None):
         """Initialize storage with tasks directory.
-        
+
         Args:
             base_dir: Optional base directory for tasks. Defaults to ~/.gemini
         """
@@ -24,7 +24,7 @@ class TaskStorage:
             self.base_dir = base_dir
         else:
             self.base_dir = Path.home() / ".gemini"
-            
+
         self.tasks_dir = self.base_dir / "tasks"
         self.tasks_dir.mkdir(parents=True, exist_ok=True)
 

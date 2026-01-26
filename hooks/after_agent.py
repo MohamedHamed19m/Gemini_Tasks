@@ -79,6 +79,8 @@ def run_verification():
     verify_sh = Path(project_dir) / ".gemini" / "verify.sh"
     verify_sh_alt = Path(project_dir) / "scripts" / "verify.sh"
     verify_js = Path(project_dir) / ".gemini" / "verify.js"
+    verify_py = Path(project_dir) / ".gemini" / "verify.py"
+    verify_py_alt = Path(project_dir) / "scripts" / "verify.py"
     
     verify_script = None
     command = None
@@ -98,6 +100,12 @@ def run_verification():
     elif verify_js.exists():
         verify_script = verify_js
         command = ['node', str(verify_js)]
+    elif verify_py.exists():
+        verify_script = verify_py
+        command = ['python', str(verify_py)]
+    elif verify_py_alt.exists():
+        verify_script = verify_py_alt
+        command = ['python', str(verify_py_alt)]
         
     if not verify_script:
         return True, "No verification script found", ""
