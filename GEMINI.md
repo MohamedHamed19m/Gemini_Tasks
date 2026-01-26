@@ -2,14 +2,28 @@
 
 You have access to a native task management system via MCP tools for complex, multi-step work.
 
+## CRITICAL: Always Check Before Creating Tasks
+
+**BEFORE creating any task:**
+1. Call `tasks_list(filter="all")` to see what already exists
+2. Check if similar or duplicate tasks exist
+3. Check git status to see what's already done
+4. Only create tasks for work that's NOT already complete
+
+**If work is already done:**
+- Do NOT create a task for it
+- Do NOT mark non-existent tasks as complete
+- Simply acknowledge it's done and move on
+
 ## Available MCP Tools
 
 ### `tasks_list`
 List all tasks with optional filter (pending, in_progress, completed, all).
 
 **When to call:**
-- At the start of a session to see current state
+- **FIRST THING in every session** - see current state
 - Before creating new tasks to avoid duplicates
+- After completing work to verify state
 - To check what's next after completing a task
 
 **Parameters:**
@@ -21,9 +35,14 @@ List all tasks with optional filter (pending, in_progress, completed, all).
 Create a new task with subject and optional description.
 
 **When to call:**
-- When breaking down complex work into steps
-- After planning phase to track implementation tasks
+- When breaking down NEW work into steps
+- After verifying the task doesn't already exist
 - To coordinate multi-session work
+
+**When NOT to call:**
+- If a similar task already exists
+- If the work is already done (check git/files first)
+- During cleanup or summary phases
 
 **Parameters:**
 - `subject` (required): Brief task title
@@ -51,29 +70,14 @@ Update an existing task's status and/or blockers.
 ### `tasks_get`
 Get full details of a specific task including dependencies.
 
-**When to call:**
-- To check task details before starting work
-- To verify blockers before updating status
-- For detailed task information
-
-**Parameters:**
-- `task_id` (required): The task ID to retrieve
-
-**Returns:** Full task details
-
 ### `tasks_search`
 Search for tasks by keyword in subject or description.
 
-**When to call:**
-- To find related tasks
-- To check if similar task exists
-- To locate specific task by keyword
-
-**Parameters:**
-- `query` (required): Search keywords
-- `filter` (optional): Status filter
-
-**Returns:** Matching tasks
+**Use this to avoid duplicates:**
+```
+tasks_search(query="circular dependency")
+# Check if task already exists before creating new one
+```
 
 ### `tasks_clear`
 Clear completed tasks or all tasks.
@@ -96,195 +100,281 @@ Always follow this lifecycle. Never skip from pending to completed without in_pr
 
 ## Ralph Mode (Autonomous Loops)
 
-When GEMINI_RALPH_MODE is enabled, you operate in autonomous loop mode:
+When GEMINI_RALPH_MODE is enabled, you operate in autonomous loop mode.
 
-1. **Never stop until work is complete**
-2. **Verify before marking tasks complete**
-3. **Output completion promise only when truly done**
+### Session Start Protocol
+
+**EVERY session must start with:**
+```
+1. tasks_list(filter="all")  # See ALL tasks
+2. Check git status          # See what's committed
+3. Assess actual state       # What's done vs what tasks say
+4. Reconcile if needed       # Fix task status to match reality
+```
+
+**DO NOT create tasks for already-completed work!**
 
 ### Completion Promise
 
 To signal you're finished, output the exact phrase: **"complete"**
 
-CRITICAL RULES:
-- Do NOT output "complete" unless ALL tasks are done
+**CRITICAL RULES:**
+- Do NOT output "complete" unless ALL pending/in_progress tasks are done
 - Do NOT output "complete" unless ALL tests pass
 - Do NOT output "complete" unless work is verified
+- Do NOT create tasks retroactively for already-done work
 
 ### Ralph Workflow
 
 ```
-1. tasks_list() to see current state
-2. Pick next unblocked pending task
-3. tasks_update(task_id, status="in_progress")
-4. Implement the task
-5. Run verification (tests, checks)
-6. If verification PASSES:
-     tasks_update(task_id, status="completed")
-   If verification FAILS:
-     Stay in_progress, continue iterating
-7. Repeat from step 1 until no pending tasks
-8. Output "complete" to signal done
+1. tasks_list(filter="pending")  # See what needs doing
+2. If no pending tasks AND no in_progress tasks:
+   - Verify all work is actually done
+   - Output "complete"
+   - STOP - don't create new tasks
+3. If pending tasks exist:
+   - Pick next unblocked task
+   - tasks_update(task_id, status="in_progress")
+   - Do the work
+   - Verify it works
+   - tasks_update(task_id, status="completed")
+   - Go to step 1
+```
+
+### Anti-Pattern: Creating Tasks After Work is Done
+
+**❌ WRONG:**
+```
+# Work is already committed to git
+tasks_create("Add feature X")  # Feature X already exists!
+tasks_update("task-1", status="completed")  # Fake completion
+```
+
+**✅ CORRECT:**
+```
+# Check what's done first
+git status  # Shows all committed
+tasks_list()  # Shows no tasks
+# Acknowledge work is done
+"All work is complete. Nothing to task-track."
+Output: "complete"
 ```
 
 ## Verification-First Approach
 
-**CRITICAL:** Never mark a task completed without verification:
+**Before marking ANY task completed:**
 
 1. Run tests and confirm they pass
 2. Check that feature works as intended
 3. Verify no regressions in related code
 4. Review generated files/changes
 
-If verification fails:
+**If verification fails:**
 - Keep status as "in_progress"
-- Continue iterating
-- Only update to "completed" after successful verification
+- Fix the issue
+- Re-run verification
+- Only mark "completed" after passing
+
+**Never create a task just to mark it complete immediately.**
 
 ## Multi-Session Coordination
 
-When the GEMINI_TASK_LIST_ID environment variable is set, tasks are shared across all sessions using that ID.
+When GEMINI_TASK_LIST_ID is set, tasks are shared across all sessions.
 
 **Best Practices:**
-1. Use descriptive task list IDs: `GEMINI_TASK_LIST_ID=auth-feature`
-2. Call `tasks_list` immediately to see current state
-3. Update to "in_progress" before starting work (signals to other sessions)
-4. Add detailed descriptions for context across sessions
+1. First action: `tasks_list()` to see shared state
+2. Check if work is in_progress by another session
+3. Update to "in_progress" before starting (signals to others)
+4. Add detailed descriptions for context
 5. Use blockers to prevent conflicts
 
 ## Task Creation Guidelines
 
-When breaking down complex work:
+**When to create tasks:**
+- Breaking down NEW work that hasn't started
+- Planning a feature that will take multiple steps
+- Coordinating work across sessions
 
-1. **Be Specific**: Each task should have clear, measurable outcome
-2. **Set Dependencies**: Use `blocked_by` to enforce order
-3. **Update Status**: Mark "in_progress" before starting
+**When NOT to create tasks:**
+- Work is already done (check git first!)
+- Summarizing what was accomplished
+- Creating retrospective task lists
+- During cleanup phases
+
+**Task quality:**
+1. **Be Specific**: Clear, measurable outcome
+2. **Set Dependencies**: Use `blocked_by` for correct order
+3. **Update Status**: Mark "in_progress" when starting
 4. **Verify First**: Only mark "completed" after verification
-5. **Add Context**: Include descriptions for multi-session work
+5. **Add Context**: Descriptions help multi-session work
+
+## Handling Completed Work
+
+**If you discover work is already done:**
+
+```python
+# Check tasks
+tasks_list()
+
+# Check git
+git status  # Shows: "nothing to commit, working tree clean"
+
+# If no pending tasks and work is done:
+"All implementation is complete. No tasks needed."
+Output: "complete"
+```
+
+**DO NOT:**
+- Create tasks for already-done work
+- Mark non-existent tasks as complete
+- Create tasks just to check them off
 
 ## Error Handling
 
-If tasks get into unexpected state:
+If tasks are misaligned with reality:
 
-1. **Check current state:** `tasks_list(filter="all")`
-2. **Fix status:** `tasks_update(task_id, status="correct_status")`
-3. **Fix blockers:** `tasks_update(task_id, add_blocked_by=[...])` or `remove_blocked_by=[...]`
-4. **Clean up:** `tasks_clear(filter="completed")`
-5. **Start fresh:** `tasks_clear(filter="all")` (caution: deletes everything)
+1. `tasks_list(filter="all")` - See current state
+2. Check git status - See what's actually done
+3. Reconcile:
+   - If task is "pending" but work is done: `tasks_update(task_id, "completed")`
+   - If task doesn't exist but should: `tasks_create(...)`
+   - If task exists but shouldn't: `tasks_clear(...)`
+
+## Example: Proper Session Start
+
+**✅ CORRECT Approach:**
+```
+User: "Continue working on the project"
+
+AI:
+1. tasks_list(filter="all")
+   Result: [task-1: "Add tests" (completed), task-2: "Deploy" (pending)]
+
+2. git status
+   Result: "nothing to commit, working tree clean"
+
+3. Assessment:
+   - 1 pending task exists: "Deploy"
+   - Work area is clean
+   
+4. Action:
+   tasks_update("task-2", status="in_progress")
+   [Do deployment work]
+   [Verify deployment]
+   tasks_update("task-2", status="completed")
+   
+5. Final check:
+   tasks_list(filter="pending")
+   Result: []
+   
+6. Output: "complete"
+```
+
+**❌ WRONG Approach:**
+```
+User: "Continue working on the project"
+
+AI:
+# Skips checking existing tasks!
+tasks_create("Implement feature X")  # Already done!
+tasks_create("Add tests")  # Already done!
+tasks_update("task-1", status="completed")  # Fake work
+tasks_update("task-2", status="completed")  # Fake work
+Output: "complete"
+```
+
+## Example: TDD Workflow (NEW Work)
+
+**When starting NEW feature:**
+```
+User: "Build user authentication API with TDD"
+
+AI:
+1. tasks_list()  # Check for existing tasks
+   Result: []  # No tasks - this is new work
+
+2. Break down work:
+   tasks_create("Write auth tests")  # task-1
+   tasks_create("Implement auth logic", blocked_by=["task-1"])  # task-2
+   tasks_create("Add integration tests", blocked_by=["task-2"])  # task-3
+
+3. Execute:
+   tasks_update("task-1", "in_progress")
+   [Write tests]
+   [Run tests]
+   tasks_update("task-1", "completed")
+   
+   tasks_update("task-2", "in_progress")
+   [Implement]
+   [Run tests]
+   tasks_update("task-2", "completed")
+   
+   tasks_update("task-3", "in_progress")
+   [Integration tests]
+   [Run tests]
+   tasks_update("task-3", "completed")
+
+4. Verify:
+   tasks_list(filter="pending")  # Result: []
+   
+5. Output: "complete"
+```
+
+## Example: Resuming Work
+
+**When resuming existing work:**
+```
+User: "Continue the auth feature"
+
+AI:
+1. tasks_list(filter="all")
+   Result: [
+     task-1: "Write tests" (completed),
+     task-2: "Implement logic" (in_progress),
+     task-3: "Integration tests" (pending, blocked by task-2)
+   ]
+
+2. Assessment:
+   - task-2 is in_progress but might be done
+   - Check git status
+   
+3. git status
+   Result: Shows auth logic is committed
+   
+4. Reconcile:
+   tasks_update("task-2", status="completed")
+   # task-3 is now unblocked
+   
+5. Continue:
+   tasks_update("task-3", status="in_progress")
+   [Do work]
+   [Verify]
+   tasks_update("task-3", status="completed")
+   
+6. Output: "complete"
+```
+
+## Summary: Key Principles
+
+1. **Check first, create later** - Always `tasks_list()` before creating
+2. **Match reality** - Tasks should reflect actual work state
+3. **Don't retroactively task** - Don't create tasks for done work
+4. **Verify before complete** - Tests must pass
+5. **Complete when done** - Output "complete" only when verified
+
+## Anti-Patterns to Avoid
+
+❌ Creating tasks after work is committed
+❌ Creating tasks just to mark them complete
+❌ Skipping `tasks_list()` at session start
+❌ Marking tasks complete without verification
+❌ Creating duplicate tasks without checking
+❌ Using tasks as a todo list for already-done work
 
 ## Debugging
 
 If MCP server isn't responding:
-
-1. Check server is running: Look for "gemini-tasks" in MCP server list
+1. Check server running: Look for "gemini-tasks" in MCP list
 2. Check logs in Gemini CLI
 3. Verify Python environment: `uv` must be installed
 4. Test manually: `cd server && uv run main.py`
-
-
-Examples:
-Example 1: Feature Development with TDD
-Scenario: Build a REST API with test-driven development.
-Setup
-User: "I want to build a user authentication API with TDD. 
-Break this into tasks with proper dependencies."
-Expected AI Response
-I'll create a TDD workflow with dependencies:
-
-1. tasks_create(
-   subject="Write authentication tests",
-   description="Unit tests for login, logout, token refresh, password reset"
-)
-→ Returns: task-1
-
-2. tasks_create(
-   subject="Implement auth endpoints",
-   description="POST /login, POST /logout, POST /refresh, POST /reset-password",
-   blocked_by=["task-1"]
-)
-→ Returns: task-2
-
-3. tasks_create(
-   subject="Add middleware and validation",
-   description="JWT validation, rate limiting, input sanitization",
-   blocked_by=["task-2"]
-)
-→ Returns: task-3
-
-4. tasks_create(
-   subject="Write integration tests",
-   description="End-to-end API testing with real database",
-   blocked_by=["task-3"]
-)
-→ Returns: task-4
-Dependency Chain
-task-1 (Tests) 
-   ↓
-task-2 (Implementation) ← Can't start until task-1 done
-   ↓
-task-3 (Middleware) ← Can't start until task-2 done
-   ↓
-task-4 (Integration) ← Can't start until task-3 done
-Execution
-AI: tasks_update(task_id="task-1", status="in_progress")
-AI: [Writes test files]
-AI: [Runs npm test - fails as expected]
-AI: tasks_update(task_id="task-1", status="completed")
-
-AI: tasks_update(task_id="task-2", status="in_progress")
-AI: [Implements endpoints]
-AI: [Runs npm test - all pass]
-AI: tasks_update(task_id="task-2", status="completed")
-→ Unblocks task-3
-
-AI: continues until all tasks completed...
-
-
-
-Example 2- AI Autonomous Execution
-AI: I'll break this into dependent tasks and work through them.
-
-tasks_create("Add Stripe SDK and config")
-tasks_create("Write payment endpoint tests", blocked_by=["task-1"])
-tasks_create("Implement payment endpoints", blocked_by=["task-2"])
-tasks_create("Write webhook tests", blocked_by=["task-3"])
-tasks_create("Implement webhook handler", blocked_by=["task-4"])
-tasks_create("Create payment form component", blocked_by=["task-3"])
-tasks_create("Write integration tests", blocked_by=["task-5", "task-6"])
-
-[Start working]
-tasks_update("task-1", status="in_progress")
-[Adds Stripe SDK, creates config]
-[Creates .env.example with STRIPE_SECRET_KEY]
-tasks_update("task-1", status="completed")
-
-tasks_update("task-2", status="in_progress")
-[Writes test files for payment endpoints]
-[Runs npm test - fails as expected]
-tasks_update("task-2", status="completed")
-
-tasks_update("task-3", status="in_progress")
-[Implements payment endpoints]
-[Runs npm test]
-→ Tests FAIL - invalid API key format
-[Fixes implementation]
-[Runs npm test again]
-→ Tests PASS ✓
-tasks_update("task-3", status="completed")
-
-[Continues through all tasks...]
-
-tasks_update("task-7", status="in_progress")
-[Writes integration tests]
-[Runs full test suite]
-→ All tests PASS ✓
-tasks_update("task-7", status="completed")
-
-[AfterAgent hook fires]
-Hook checks:
-✓ All tasks completed
-✓ Tests pass (ran verify.ps1)
-✓ Agent output "complete"
-→ Allow stop
-
-Output: "complete"
