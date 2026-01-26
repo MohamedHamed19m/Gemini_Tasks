@@ -3,21 +3,29 @@
 import json
 import os
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 
 class TaskStorage:
     """Handles task persistence to file system."""
 
-    def __init__(self):
-        """Initialize storage with tasks directory."""
+    def __init__(self, base_dir: Optional[Path] = None):
+        """Initialize storage with tasks directory.
+        
+        Args:
+            base_dir: Optional base directory for tasks. Defaults to ~/.gemini
+        """
         # Get task list ID from environment or use default
         self.task_list_id = os.environ.get("GEMINI_TASK_LIST_ID", "default")
 
-        # Tasks stored in ~/.gemini/tasks/
-        home = Path.home()
-        self.tasks_dir = home / ".gemini" / "tasks"
+        # Tasks stored in {base_dir}/tasks/
+        if base_dir:
+            self.base_dir = base_dir
+        else:
+            self.base_dir = Path.home() / ".gemini"
+            
+        self.tasks_dir = self.base_dir / "tasks"
         self.tasks_dir.mkdir(parents=True, exist_ok=True)
 
         self.tasks_file = self.tasks_dir / f"{self.task_list_id}.json"

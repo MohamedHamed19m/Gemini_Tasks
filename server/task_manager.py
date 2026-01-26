@@ -2,6 +2,7 @@
 
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
+from pathlib import Path
 
 from models import (
     Task,
@@ -18,9 +19,13 @@ from storage import TaskStorage
 class TaskManager:
     """Manages tasks with dependencies and blockers."""
 
-    def __init__(self):
-        """Initialize task manager with storage."""
-        self.storage = TaskStorage()
+    def __init__(self, base_dir: Optional[Path] = None):
+        """Initialize task manager with storage.
+        
+        Args:
+            base_dir: Optional base directory for tasks.
+        """
+        self.storage = TaskStorage(base_dir=base_dir)
 
     def _generate_task_id(self, tasks: List[Task]) -> str:
         """Generate unique task ID.

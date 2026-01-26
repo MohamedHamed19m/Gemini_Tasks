@@ -5,42 +5,26 @@ import json
 
 @pytest.fixture
 def task_manager(tmp_path):
-    # Use a temporary tasks file for testing
-    tasks_file = tmp_path / "tasks.json"
-    
-    # Mock GEMINI_TASK_LIST_ID to use this temp file
-    # Note: TaskStorage uses os.homedir() / .gemini / tasks / {id}.json
-    # We need to mock TaskStorage to use our temp path or just let it use the real one but clean up.
-    # Actually, let's just test the TaskManager logic.
-    
-    # For simplicity in this test, we'll let it use the real storage but we'll be careful.
-    # A better way is to inject storage into TaskManager.
-    return TaskManager()
+    # Use a temporary directory for testing
+    return TaskManager(base_dir=tmp_path)
 
-def test_create_task():
-    tm = TaskManager()
-    # Clean start for testing
-    tm.clear_tasks("all")
-    
+def test_create_task(task_manager):
+    tm = task_manager
     result = tm.create_task("Test Task", "Description")
     assert result.task.subject == "Test Task"
     assert result.task.status == "pending"
     assert result.task.id == "task-1"
 
-def test_update_task():
-    tm = TaskManager()
-    tm.clear_tasks("all")
-    
+def test_update_task(task_manager):
+    tm = task_manager
     tm.create_task("Test Task")
     tm.update_task("task-1", status="in_progress")
     
     task_get = tm.get_task("task-1")
     assert task_get.task.status == "in_progress"
 
-def test_clear_tasks():
-    tm = TaskManager()
-    tm.clear_tasks("all")
-    
+def test_clear_tasks(task_manager):
+    tm = task_manager
     tm.create_task("Task 1")
     tm.create_task("Task 2")
     tm.update_task("task-1", status="completed")
