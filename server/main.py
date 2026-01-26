@@ -3,8 +3,8 @@
 from fastmcp import FastMCP
 from typing import Optional, List
 
-from task_manager import TaskManager
-from models import (
+from task_manager import (
+    TaskManager,
     TaskListResult,
     TaskCreateResult,
     TaskUpdateResult,
@@ -48,15 +48,7 @@ task_manager = TaskManager()
     """,
 )
 def tasks_list(filter: str = "all") -> TaskListResult:
-    """List all tasks with optional status filter.
-
-    Args:
-        filter: Status filter (all, pending, in_progress, completed)
-
-    Returns:
-        TaskListResult with filtered tasks
-
-    """
+    """List all tasks with optional status filter."""
     return task_manager.list_tasks(filter)
 
 
@@ -86,17 +78,7 @@ def tasks_list(filter: str = "all") -> TaskListResult:
 def tasks_create(
     subject: str, description: str = "", blocked_by: Optional[List[str]] = None
 ) -> TaskCreateResult:
-    """Create a new task.
-
-    Args:
-        subject: Task subject/title
-        description: Task description
-        blocked_by: List of task IDs this task is blocked by
-
-    Returns:
-        TaskCreateResult with created task
-
-    """
+    """Create a new task."""
     return task_manager.create_task(subject, description, blocked_by)
 
 
@@ -134,18 +116,7 @@ def tasks_update(
     add_blocked_by: Optional[List[str]] = None,
     remove_blocked_by: Optional[List[str]] = None,
 ) -> TaskUpdateResult:
-    """Update a task.
-
-    Args:
-        task_id: Task ID to update
-        status: New status
-        add_blocked_by: Task IDs to add as blockers
-        remove_blocked_by: Task IDs to remove as blockers
-
-    Returns:
-        TaskUpdateResult with updated task
-
-    """
+    """Update a task."""
     return task_manager.update_task(task_id, status, add_blocked_by, remove_blocked_by)
 
 
@@ -167,15 +138,7 @@ def tasks_update(
     """,
 )
 def tasks_get(task_id: str) -> TaskGetResult:
-    """Get a specific task.
-
-    Args:
-        task_id: Task ID to retrieve
-
-    Returns:
-        TaskGetResult with task details
-
-    """
+    """Get a specific task."""
     return task_manager.get_task(task_id)
 
 
@@ -198,16 +161,7 @@ def tasks_get(task_id: str) -> TaskGetResult:
     """,
 )
 def tasks_search(query: str, filter: Optional[str] = None) -> TaskSearchResult:
-    """Search tasks by keyword.
-
-    Args:
-        query: Search query
-        filter: Optional status filter
-
-    Returns:
-        TaskSearchResult with matching tasks
-
-    """
+    """Search tasks by keyword."""
     return task_manager.search_tasks(query, filter)
 
 
@@ -229,15 +183,7 @@ def tasks_search(query: str, filter: Optional[str] = None) -> TaskSearchResult:
     """,
 )
 def tasks_clear(filter: str = "completed") -> TaskClearResult:
-    """Clear tasks by filter.
-
-    Args:
-        filter: "completed" to clear only completed, "all" to clear everything
-
-    Returns:
-        TaskClearResult with count of cleared tasks
-
-    """
+    """Clear tasks by filter."""
     return task_manager.clear_tasks(filter)
 
 

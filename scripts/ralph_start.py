@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: ralph_start.py <objective> [max_iterations] [completion_promise]")
@@ -24,7 +25,7 @@ def main():
         "startTime": int(datetime.now().timestamp() * 1000),
         "original_prompt": objective,
         "max_iterations": max_iterations,
-        "completion_promise": completion_promise
+        "completion_promise": completion_promise,
     }
 
     with open(state_file, "w", encoding="utf-8") as f:
@@ -33,8 +34,8 @@ def main():
     print(f"🔄 Ralph loop initialized for Objective: {objective}")
     print(f"Max iterations: {max_iterations}")
     print(f"Completion promise: <promise>{completion_promise}</promise>")
-    print("
-Starting work now...")
+    print("Starting work now...")
+
 
 if __name__ == "__main__":
     main()
