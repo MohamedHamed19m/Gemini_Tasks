@@ -9,7 +9,6 @@ Task management extension for Gemini CLI, inspired by Claude Code's native task 
 - Multi-session coordination
 - Persistent storage across sessions
 - Status lifecycle: `pending -> in_progress -> completed`
-- BeforeAgent hook displays pending tasks at session start
 
 ## Installation
 
@@ -174,7 +173,7 @@ Get-ChildItem "$env:USERPROFILE\.gemini\tasks\"
 cat "$env:USERPROFILE\.gemini\tasks\default.json"
 ```
 
-### Hooks Not Firing
+### MCP Server Not Responding
 
 **Check extension installed:**
 ```
@@ -185,6 +184,12 @@ Should show:
 ```
 gemini-tasks v1.0.0
 ```
+
+**Check MCP server:**
+1. Look for "gemini-tasks" in MCP list
+2. Check logs in Gemini CLI
+3. Verify Python environment: `uv` must be installed
+4. Test manually: `cd server && uv run main.py`
 
 ## Credits
 
