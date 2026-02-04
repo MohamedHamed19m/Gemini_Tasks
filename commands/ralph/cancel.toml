@@ -1,4 +1,0 @@
-description = "Cancel the current Ralph Wiggum loop"
-prompt = """
-!{python "${extensionPath}${/}scripts${/}ralph_cancel.py"}
-"""

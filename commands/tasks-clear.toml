@@ -1,0 +1,14 @@
+# Custom command: /tasks-clear
+# Clears completed tasks
+#
+# Usage:
+#   /tasks-clear        - Clears only completed tasks (default, safe)
+#   /tasks-clear all    - Clears ALL tasks (destructive)
+
+description = "Clears completed tasks. Use 'all' to clear everything."
+
+prompt = """
+Execute this script to clear completed tasks.
+
+python ~/.gemini/extensions/gemini-tasks/scripts/tasks_clear.py {{args}}}
+"""

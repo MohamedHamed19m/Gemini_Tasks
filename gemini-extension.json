@@ -19,50 +19,6 @@
       "name": "Task List ID",
       "description": "Shared task list identifier for multi-session coordination",
       "envVar": "GEMINI_TASK_LIST_ID"
-    },
-    {
-      "name": "Max Iterations",
-      "description": "Maximum Ralph loop iterations before forcing stop (default: 10)",
-      "envVar": "GEMINI_MAX_ITERATIONS"
-    },
-    {
-      "name": "Completion Promise",
-      "description": "Word/phrase agent must output to signal completion (default: complete)",
-      "envVar": "GEMINI_COMPLETION_PROMISE"
-    },
-    {
-      "name": "Enable Ralph Mode",
-      "description": "Enable autonomous Ralph Wiggum loops (default: false)",
-      "envVar": "GEMINI_RALPH_MODE"
     }
-  ],
-  "hooks": {
-    "BeforeAgent": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "name": "display-tasks",
-            "type": "command",
-            "command": "python ${extensionPath}/hooks/before_agent.py",
-            "description": "Display pending tasks before agent starts"
-          }
-        ]
-      }
-    ],
-    "AfterAgent": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "name": "ralph-loop-check",
-            "type": "command",
-            "command": "python ${extensionPath}/hooks/after_agent.py",
-            "description": "Ralph Wiggum loop: verify completion and force retry if needed",
-            "timeout": 10000
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }
